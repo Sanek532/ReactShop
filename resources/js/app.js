@@ -74,63 +74,55 @@ class App extends React.Component {
     }
 
 
-
     deleteOrder(id) {
-        if (queryDeleteOrder(id)) this.queryGetOrders();
-        //this.setState({ orders: this.state.orders.filter(el => el.order.id !== id)})
-    }
-
-    addToOrder(item) {
-        let isInArray = false;
-        this.state.orders.forEach(el => {
-            if (item.id === el.order.id) isInArray = true;
-        });
-        if (!isInArray)
-        {
-            if (queryStoreOrder(item.id)) this.queryGetOrders();
-
-            //this.setState({orders: [...this.state.orders, item]})
+        if (queryDeleteOrder(id)) {
+            const orders = this.state.orders.filter(order => order.order.id !== id);
+            this.setState({orders: orders});
         }
     }
 
-    queryGetOrders() {
-        const urlOrders = "api/orders";
-        axios.get(urlOrders)
-            .then(res => {
-                const orders = res.data.data;
-                this.setState({orders: orders});
-                console.log(orders);
-            })
-            .catch(error => {
-                console.log('Ошибка при получении данных из корзины' + error);
-            });
+    async addToOrder(item) {
+        const isInArray = this.state.orders.some(
+            (order) => order.order.id === item.id
+        );
+        if (!isInArray) {
+            const product = await queryStoreOrder(item.id);
+            if (product) this.setState({orders: [...this.state.orders, {order: item}]});
+        }
+    }
+
+    async queryGetOrders() {
+        const url = "api/orders";
+        const {data, status} = await axios.get(url);
+        if (status === 200) {
+            this.setState({orders: data.data});
+            console.log(data.data);
+        }
+        else console.log('Не удалось получить список корзины status='+status);
     }
 }
 
-    const queryDeleteOrder = (id) => {
+    async function queryDeleteOrder(id) {
     const url = `api/orders/${id}`;
-    return axios.delete(url)
-        .then(res => {
-            console.log('элемент успешно удален' + res.data);
-            return 1;
-        })
-        .catch(error => {
-            console.log('Ошибка при удалении элемента из корзины' + error);
-            return 0;
-        })
+    const {data, status} = await axios.delete(url);
+    if (status === 200) {
+        console.log(data);
+        return data;
+    }
+    else {
+        console.log('Не удалось удалить товар из корзины');
+        return null;
+    }
 }
 
-    const queryStoreOrder = (id) => {
+    async function queryStoreOrder(id) {
         const url = "api/orders";
-        return axios.post(url, {id: id})
-            .then(res => {
-                console.log('Товар успешно добавлен в корзину' + res);
-                return 1;
-            })
-            .catch(error => {
-                console.log('Не удалось добавить товар в корзину' + error);
-                return 0;
-            });
+        const { data, status } = await axios.post(url, {id: id});
+        if (status === 200) return data;
+        else {
+            console.log('Не удалось добавить товар в корзину');
+            return null;
+        }
     }
 
 export default App;

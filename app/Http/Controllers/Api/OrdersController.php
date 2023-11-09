@@ -31,8 +31,8 @@ class OrdersController extends Controller
 
         $order = new Order();
         $order->product_id = $productId;
-        $order->save();
-        return response()->json(['message' => 'Товар успешно добавлен в корзину']);
+        if ($order->save()) return response()->json(['message' => 'Товар успешно добавлен в корзину(сервер)']);
+        else return response()->json(['message' => 'Ошибка добавления товара (сервер)']);
     }
 
     /**
